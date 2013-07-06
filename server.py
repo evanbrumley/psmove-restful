@@ -21,7 +21,7 @@ def color_type(val):
 def rumble_type(val):
     val = int(val)
 
-    if val < 0 or val > 100:
+    if val < 0 or val > 255:
         raise ValueError("Rumble must be between 0 and 100")
 
     return val

@@ -10,11 +10,18 @@ Installation
 
 2. Add the full path to the psmoveapi build directory to an environment variable named PSMOVEAPI_BUILD_DIR
 
-2. `pip install -r requirements.txt`
+2. ``pip install -r requirements.txt``
 
 Use
 ---
 
-Run the server using `python server.py`
+Run the server using ``python server.py``
 
 Controller information will be hosted at localhost:5000/controllers/<controller_id>
+
+Four variables are available for PUT requests
+
+- color_red (0-255)
+- color_green (0-255)
+- color_blue (0-255)
+- rumble (0-255)
