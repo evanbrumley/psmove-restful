@@ -2,7 +2,6 @@ import sys, os, time
 from threading import Thread
 
 sys.path.insert(0, os.environ['PSMOVEAPI_BUILD_DIR'])
-print sys.path
 import psmove
 
 
