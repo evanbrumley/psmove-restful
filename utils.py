@@ -8,8 +8,10 @@ import psmove
 class Controller(object):
     _active = False
     _keep_alive_thread = None
+    _polling_thread = None
 
     controller = None
+    read_only = False
 
     color_red = 0
     color_green = 0
@@ -34,23 +36,39 @@ class Controller(object):
 
     rumble = 0
 
-    def __init__(self, controller):
+    def __init__(self, controller, read_only=False):
         self._active = True
         self.controller = controller
+        self.read_only = read_only
 
-        self._keep_alive_thread = Thread(target=self._keep_alive_thread_loop)
-        self._keep_alive_thread.daemon = True
-        self._keep_alive_thread.start()
+        self._polling_thread = Thread(target=self._polling_thread_loop)
+        self._polling_thread.daemon = True
+        self._polling_thread.start()
+
+        if not read_only:
+            self._keep_alive_thread = Thread(target=self._keep_alive_thread_loop)
+            self._keep_alive_thread.daemon = True
+            self._keep_alive_thread.start()
 
     def terminate(self):
         self._active = False
-        self._keep_alive_thread.join()
+
+        if self._keep_alive_thread:
+            self._keep_alive_thread.join()
+
+        if self._polling_thread:
+            self._polling_thread.join()
 
     def _keep_alive_thread_loop(self):
         while(self._active):
             self.controller.set_leds(self.color_red, self.color_green, self.color_blue)
             self.controller.update_leds()
             time.sleep(1)
+
+    def _polling_thread_loop(self):
+        while(self._active):
+            self.update_state()
+            time.sleep(0.012)
 
     def update_state(self):
         result = self.controller.poll()
@@ -73,10 +91,7 @@ class Controller(object):
             self.ax, self.ay, self.az = self.controller.get_accelerometer_frame(psmove.Frame_SecondHalf)
             self.gx, self.gy, self.gz = self.controller.get_gyroscope_frame(psmove.Frame_SecondHalf)
 
-    def state_as_dict(self, update_first=True):
-        if update_first:
-            self.update_state()
-
+    def state_as_dict(self):
         state_dict = {
             'ax': self.ax,
             'ay': self.ay,
@@ -99,6 +114,14 @@ class Controller(object):
             'rumble': self.rumble,
         }
 
+        # There's currently no way to get color
+        # or rumble directly from the controller
+        if self.read_only:
+            del state_dict['color_red']
+            del state_dict['color_green']
+            del state_dict['color_blue']
+            del state_dict['rumble']
+
         return state_dict
 
     def set_color(self, red=None, green=None, blue=None):
@@ -119,6 +142,6 @@ class Controller(object):
         self.controller.set_rumble(rumble)
 
 
-def get_controllers():
+def get_controllers(read_only=False):
     controllers = [psmove.PSMove(x) for x in range(psmove.count_connected())]
-    return [Controller(c) for c in controllers if c.connection_type == psmove.Conn_Bluetooth]
+    return [Controller(c, read_only) for c in controllers if c.connection_type == psmove.Conn_Bluetooth]

@@ -22,7 +22,7 @@ def rumble_type(val):
     val = int(val)
 
     if val < 0 or val > 255:
-        raise ValueError("Rumble must be between 0 and 100")
+        raise ValueError("Rumble must be between 0 and 255")
 
     return val
 
