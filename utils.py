@@ -7,8 +7,7 @@ import psmove
 
 class Controller(object):
     _active = False
-    _keep_alive_thread = None
-    _polling_thread = None
+    _loop_thread = None
 
     controller = None
     read_only = False
@@ -41,32 +40,22 @@ class Controller(object):
         self.controller = controller
         self.read_only = read_only
 
-        self._polling_thread = Thread(target=self._polling_thread_loop)
-        self._polling_thread.daemon = True
-        self._polling_thread.start()
-
-        if not read_only:
-            self._keep_alive_thread = Thread(target=self._keep_alive_thread_loop)
-            self._keep_alive_thread.daemon = True
-            self._keep_alive_thread.start()
+        self._loop_thread = Thread(target=self._loop)
+        self._loop_thread.daemon = True
+        self._loop_thread.start()
 
     def terminate(self):
         self._active = False
 
-        if self._keep_alive_thread:
-            self._keep_alive_thread.join()
+        if self._loop_thread:
+            self._loop_thread.join()
 
-        if self._polling_thread:
-            self._polling_thread.join()
-
-    def _keep_alive_thread_loop(self):
+    def _loop(self):
         while(self._active):
-            self.controller.set_leds(self.color_red, self.color_green, self.color_blue)
-            self.controller.update_leds()
-            time.sleep(1)
+            if not self.read_only:
+                self.controller.set_leds(self.color_red, self.color_green, self.color_blue)
+                self.controller.update_leds()
 
-    def _polling_thread_loop(self):
-        while(self._active):
             self.update_state()
             time.sleep(0.012)
 
